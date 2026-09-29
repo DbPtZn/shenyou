@@ -1,0 +1,75 @@
+# 神游本地开发基础设施：PostgreSQL + Redis
+# 用法：pnpm db:up（启动）/ pnpm db:down（停止）
+name: shenyou
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: shenyou-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: shenyou
+      POSTGRES_PASSWORD: shenyou
+      POSTGRES_DB: shenyou
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shenyou -d shenyou"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: shenyou-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      # 本机 6379 已被既有 my-redis 容器占用，故映射 6380（.env 的 REDIS_URL 用 6380）
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # RustFS：本地 S3 兼容对象存储（Apache-2.0），用于音频预签名直传联调
+  # 注：docker 镜像源屏蔽了 minio/minio 仓库，故用 RustFS 替代，S3 API 完全兼容
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: shenyou-rustfs
+    restart: unless-stopped
+    command: ["rustfs", "/data"]
+    environment:
+      RUSTFS_ACCESS_KEY: shenyou
+      RUSTFS_SECRET_KEY: shenyou-secret
+    ports:
+      - "9000:9000" # S3 API（.env 的 S3_ENDPOINT 指向这里）
+      - "9001:9001" # Web 控制台
+    volumes:
+      - rustfs-data:/data
+
+  # 一次性任务：RustFS 就绪后创建 shenyou-audio bucket（mc 兼容任意 S3 端点，重试等待就绪）
+  rustfs-init:
+    image: minio/mc:latest
+    container_name: shenyou-rustfs-init
+    depends_on:
+      - rustfs
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until mc alias set local http://rustfs:9000 shenyou shenyou-secret >/dev/null 2>&1 \
+          && mc mb --ignore-existing local/shenyou-audio; do sleep 2; done
+        # 本地开发：放开匿名下载，模拟 CDN 回源（生产由真实 CDN 鉴权，勿用于生产 bucket）
+        mc anonymous set download local/shenyou-audio
+    restart: "no"
+
+volumes:
+  postgres-data:
+  redis-data:
+  rustfs-data:

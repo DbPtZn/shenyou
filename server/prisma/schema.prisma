@@ -1,0 +1,258 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// 内容状态机（与 @shenyou/shared contentStatusSchema 一致）
+enum ContentStatus {
+  draft
+  reviewing
+  published
+  offline
+}
+
+/// 音频轨道类型（与 audioTrackTypeSchema 一致）
+enum AudioTrackType {
+  narration
+  ambient
+  music
+  mixed
+}
+
+/// 音频资产状态机（与 audioAssetStatusSchema 一致）
+enum AudioAssetStatus {
+  processing
+  ready
+}
+
+/// 章节文案审核状态：AI 草稿待人工确认 → 确认后进入合成
+enum DraftStatus {
+  pending
+  confirmed
+  rejected
+}
+
+/// AI 管线步骤
+enum PipelineStep {
+  draft
+  tts
+  music
+  mix
+  upload
+}
+
+/// 管线任务状态
+enum PipelineJobStatus {
+  pending
+  running
+  completed
+  failed
+  dead
+}
+
+/// 用户：手机号或邮箱至少其一（注册时由 AuthService 校验）
+model User {
+  id                 String         @id @default(uuid())
+  phone              String?        @unique
+  email              String?        @unique
+  passwordHash       String
+  nickname           String?
+  /// 角色：user / admin（运营后台）；MVP 通过数据库直接提升
+  role               String         @default("user")
+  /// 订阅状态（与 subscriptionStatusSchema 一致），默认 free
+  subscriptionStatus String         @default("free")
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  refreshTokens      RefreshToken[]
+  playbackHistories  PlaybackHistory[]
+  favorites          Favorite[]
+  entitlement        Entitlement?
+}
+
+/// Refresh Token：只存 SHA-256 哈希；一次一换（revokedAt + replacedById）；可吊销
+model RefreshToken {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// 旅程：一个沉浸式音频场景（如「雨夜京都小巷」）
+model Journey {
+  id               String        @id @default(uuid())
+  title            String
+  subtitle         String?
+  coverUrl         String?
+  tags             String[]
+  /// 是否免费；false 时仅订阅有效用户可播放
+  isFree           Boolean       @default(false)
+  status           ContentStatus @default(draft)
+  /// 全部章节时长合计（冗余字段，章节音频 ready 时事务内更新）
+  totalDurationSec Int           @default(0)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  chapters         Chapter[]
+  favorites        Favorite[]
+
+  @@index([status, createdAt])
+}
+
+/// 章节：旅程内按 index 排序的一段音频内容
+model Chapter {
+  id                String            @id @default(uuid())
+  journeyId         String
+  journey           Journey           @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  /// 旅程内序号，从 1 开始
+  index             Int
+  title             String
+  subtitle          String?
+  /// 站点时间轴 JSON：[{ timeSec, title, subtitle? }]，供详情页时间轴与播放页站点进度使用
+  stops             Json              @default("[]")
+  /// 冗余：ready 混音成品时长（秒）
+  durationSec       Int               @default(0)
+  /// AI 生成的写景文案（TTS 合成输入）；草稿态可被人工编辑
+  narrationText     String?
+  /// 文案审核状态：pending 待确认 → confirmed 可合成 → rejected 需重写
+  draftStatus       DraftStatus       @default(pending)
+  /// 文案内容 hash（幂等键组成部分，确认后冻结）
+  draftHash         String?
+  /// TTS 音色 ID（由旅程/章节配置决定）
+  voiceId           String            @default("default")
+  /// BGM 生成标签（如 ["雨夜", "钢琴", " ambient"]）
+  musicTags         String[]          @default([])
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  audioAssets       AudioAsset[]
+  playbackHistories PlaybackHistory[]
+  pipelineJobs      PipelineJob[]
+
+  @@unique([journeyId, index])
+  @@index([journeyId])
+}
+
+/// 音频资产：章节下的人声/环境音/音乐/混音成品文件
+model AudioAsset {
+  id         String           @id @default(uuid())
+  chapterId  String
+  chapter    Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  trackType  AudioTrackType
+  /// 预置混音组合标识（default / relax）
+  mixPreset  String           @default("default")
+  /// 对象存储 objectKey（url 由 CDN_BASE_URL + objectKey 派生，不落库绝对地址）
+  objectKey  String
+  durationSec Int?
+  sizeBytes   Int?
+  status     AudioAssetStatus @default(processing)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@index([chapterId, status])
+}
+
+/// AI 内容管线任务记录：以「章节 + 步骤 + 内容 hash」为幂等键
+model PipelineJob {
+  id            String            @id @default(uuid())
+  chapterId     String
+  chapter       Chapter           @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  step          PipelineStep
+  /// 该步骤输入内容的 hash（与 chapterId + step 共同构成幂等键）
+  contentHash   String
+  status        PipelineJobStatus @default(pending)
+  attempts      Int               @default(0)
+  errorMessage  String?
+  /// 产出的 AudioAsset ID（tts/music/mix/upload 步骤）
+  resultAssetId String?
+  /// 步骤产出的额外数据（如 durationSec、objectKey 等）
+  resultData    Json?
+  /// BullMQ 任务 ID，用于追踪
+  bullJobId     String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@unique([chapterId, step, contentHash])
+  @@index([chapterId, step])
+  @@index([status])
+}
+
+/// 断点续播：每用户每章节一条，记录上次播放位置
+model PlaybackHistory {
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapterId   String
+  chapter     Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  positionSec Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@id([userId, chapterId])
+  @@index([userId, updatedAt])
+}
+
+/// 收藏：用户对旅程的收藏关系
+model Favorite {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journeyId String
+  journey   Journey  @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, journeyId])
+  @@index([userId, createdAt])
+}
+
+/// 用户订阅权益：RevenueCat webhook/REST 同步的服务端事实来源（每用户一条）
+model Entitlement {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// 权益状态：active 有效 / expired 已失效
+  status                String   @default("expired")
+  /// 购买环境：SANDBOX / PRODUCTION
+  environment           String?
+  /// 商店：app_store / play_store / stripe
+  store                 String?
+  /// 当前订阅产品 ID
+  productId             String?
+  /// 周期类型：NORMAL / TRIAL / INTRO / PROMOTIONAL
+  periodType            String?
+  /// 是否仍会自动续费（取消续费后为 false，到期前保持有效）
+  willRenew             Boolean  @default(true)
+  /// 权益到期时间（active 判定依据；懒过期）
+  expirationAt          DateTime?
+  /// 商店原始交易 ID（跨续费追踪同一订阅）
+  originalTransactionId String?
+  /// 最近处理的事件 ID
+  latestEventId         String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([status, expirationAt])
+}
+
+/// 计费事件留痕：RevenueCat webhook 事件全量记录（沙盒事件全量留日志的落库载体）
+model BillingEventLog {
+  id          String   @id @default(uuid())
+  /// RevenueCat 事件 ID（幂等键，重放不重复处理）
+  eventId     String   @unique
+  /// 事件类型（INITIAL_PURCHASE / RENEWAL / EXPIRATION 等）
+  eventType   String
+  /// 购买环境：SANDBOX / PRODUCTION
+  environment String
+  /// 事件完整原始 payload
+  payload     Json
+  /// 是否已驱动状态机处理（重复事件为 false）
+  processed   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@index([environment, createdAt])
+  @@index([eventType, createdAt])
+}

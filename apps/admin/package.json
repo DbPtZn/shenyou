@@ -1,0 +1,13 @@
+{
+  "name": "@shenyou/admin",
+  "version": "0.0.1",
+  "private": true,
+  "description": "神游运营后台（Vue3 + Vite + Element Plus）——阶段 1 仅占位，框架在后续阶段初始化",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}

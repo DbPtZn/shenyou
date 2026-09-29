@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>神游 APP · 高保真交互原型 v1.0</title>
+<style>
+:root{
+  --bg:#070B18; --bg2:#0B1126;
+  --p-bg:#0A0F22; --p-bg2:#0F1630;
+  --card:rgba(255,255,255,.055); --card2:rgba(255,255,255,.09);
+  --line:rgba(255,255,255,.09);
+  --tx:#EEF2FF; --tx2:#A6B0D4; --tx3:#68739B;
+  --gold:#F0CE8E; --vio:#8B9CFF; --pink:#C58BFF; --green:#7BE8B0;
+  --grad:linear-gradient(135deg,#8B9CFF 0%,#C58BFF 100%);
+  --grad-gold:linear-gradient(135deg,#F0CE8E,#E8A87C);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;
+  background:radial-gradient(1200px 600px at 70% -10%,#1A1F4A 0%,var(--bg) 55%),var(--bg);
+  color:var(--tx); min-height:100vh; overflow-x:hidden;
+}
+button{font-family:inherit;border:none;background:none;color:inherit;cursor:pointer}
+.ic{width:22px;height:22px;flex:none;display:block}
+svg.scene{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* ===== 原型展示框架 ===== */
+.proto-header{
+  position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:14px 24px;background:rgba(10,15,34,.78);backdrop-filter:blur(18px);border-bottom:1px solid var(--line);
+}
+.ph-brand{display:flex;align-items:center;gap:10px}
+.ph-logo{width:34px;height:34px;border-radius:11px;background:var(--grad);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(139,156,255,.4)}
+.ph-logo .ic{width:19px;height:19px;color:#fff}
+.ph-title{font-size:15px;font-weight:700;letter-spacing:.5px}
+.ph-sub{font-size:11px;color:var(--tx3);margin-top:2px}
+.ph-nav{display:flex;gap:8px;margin-left:auto;overflow-x:auto;max-width:60vw;padding-bottom:2px}
+.ph-nav::-webkit-scrollbar{display:none}
+.ph-chip{flex:none;font-size:12px;color:var(--tx2);padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.03);transition:.2s}
+.ph-chip:hover{color:var(--tx);border-color:rgba(139,156,255,.5)}
+.ph-chip.on{background:var(--grad);border-color:transparent;color:#fff;font-weight:600}
+
+.stage{display:flex;justify-content:center;align-items:flex-start;gap:40px;padding:36px 24px 60px}
+@media (max-width:1080px){.stage{flex-direction:column;align-items:center}.proto-side{width:100%;max-width:430px!important}}
+.proto-side{width:300px;flex:none;display:flex;flex-direction:column;gap:14px;position:sticky;top:86px}
+.side-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+.side-card h4{font-size:13px;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.side-card h4 .ic{width:15px;height:15px}
+.side-card p,.side-card li{font-size:12.5px;line-height:1.85;color:var(--tx2)}
+.side-card ul{list-style:none}
+.side-card li{padding-left:14px;position:relative}
+.side-card li::before{content:"";position:absolute;left:0;top:11px;width:5px;height:5px;border-radius:50%;background:var(--vio);opacity:.7}
+#pageNote{min-height:60px}
+.pal{display:flex;gap:8px;margin-top:8px}
+.pal span{flex:1;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,.85)}
+.side-note{font-size:11px;color:var(--tx3);line-height:1.7}
+
+#phoneBox{position:relative}
+.phone{
+  width:390px;height:844px;border-radius:54px;background:var(--p-bg);
+  border:11px solid #14182A;box-shadow:0 0 0 2px #2A3052,0 40px 90px rgba(0,0,0,.6),0 0 120px rgba(139,156,255,.10);
+  position:relative;overflow:hidden;transform-origin:top left;
+}
+.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:118px;height:32px;background:#05070F;border-radius:20px;z-index:99}
+
+/* 状态栏 */
+.statusbar{position:absolute;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:14px 30px 0;font-size:14px;font-weight:600;z-index:80;pointer-events:none}
+.sb-r{display:flex;align-items:center;gap:6px}
+.sb-r svg{display:block}
+
+/* ===== 屏幕与切换 ===== */
+.screens{position:absolute;inset:0}
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:52px;opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .3s ease,transform .3s ease;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+.screen.active{opacity:1;transform:none;pointer-events:auto}
+.screen.pad{padding-left:20px;padding-right:20px}
+
+/* ===== 通用组件 ===== */
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px}
+.btn-p{display:flex;align-items:center;justify-content:center;gap:8px;height:48px;border-radius:14px;background:var(--grad);color:#fff;font-size:15px;font-weight:600;box-shadow:0 8px 24px rgba(139,156,255,.35);transition:.2s;width:100%}
+.btn-p:active{transform:scale(.97)}
+.btn-g{display:flex;align-items:center;justify-content:center;height:44px;border-radius:13px;background:rgba(240,206,142,.14);border:1px solid rgba(240,206,142,.35);color:var(--gold);font-size:13.5px;font-weight:600;width:100%}
+.sec-title{display:flex;align-items:baseline;justify-content:space-between;margin:22px 0 12px}
+.sec-title h3{font-size:17px;font-weight:700}
+.sec-title span{font-size:12px;color:var(--tx3)}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;padding:3px 9px;border-radius:999px;background:rgba(139,156,255,.16);color:#B9C2FF;font-weight:500}
+.tag.g{background:rgba(240,206,142,.14);color:var(--gold)}
+.hscroll{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:2px 20px}
+.hscroll::-webkit-scrollbar{display:none}
+
+/* ===== 首页 ===== */
+.home-top{display:flex;align-items:center;justify-content:space-between;margin:12px 0 16px}
+.hi{font-size:21px;font-weight:700}
+.hi em{font-style:normal;background:linear-gradient(90deg,#F0CE8E,#F5D68A);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.date{font-size:12px;color:var(--tx3);margin-top:4px}
+.avatar{width:40px;height:40px;border-radius:14px;overflow:hidden;position:relative;box-shadow:0 0 0 1.5px rgba(240,206,142,.4)}
+.hero{position:relative;border-radius:22px;overflow:hidden;height:206px;box-shadow:0 14px 40px rgba(0,0,0,.4);cursor:pointer;transition:.2s}
+.hero:active{transform:scale(.985)}
+.hero svg.scene{position:absolute;inset:0;width:100%;height:100%}
+.hero-veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,11,24,0) 20%,rgba(7,11,24,.88) 82%)}
+.hero-info{position:absolute;left:18px;right:18px;bottom:16px}
+.hero-info .tag{margin-bottom:8px}
+.hero-info h2{font-size:20px;font-weight:800;letter-spacing:.5px}
+.hero-info p{font-size:12px;color:var(--tx2);margin-top:5px;line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hero-meta{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.hero-meta .m{font-size:11px;color:var(--tx3)}
+.go-btn{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#fff;background:var(--grad);padding:8px 15px;border-radius:999px;box-shadow:0 4px 16px rgba(139,156,255,.4)}
+.cats{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:18px -20px 0;padding:4px 20px}
+.cats::-webkit-scrollbar{display:none}
+.cat{flex:none;display:flex;flex-direction:column;align-items:center;gap:7px;width:60px;cursor:pointer}
+.cat i{width:54px;height:54px;border-radius:19px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:#B9C2FF;transition:.2s}
+.cat:active i{background:var(--card2)}
+.cat span{font-size:11px;color:var(--tx2)}
+.feed-item{display:flex;gap:13px;padding:11px;margin-bottom:10px;cursor:pointer;transition:.2s}
+.feed-item:active{transform:scale(.98)}
+.thumb{width:88px;height:88px;border-radius:15px;overflow:hidden;flex:none;position:relative}
+.thumb svg.scene{position:absolute;inset:0;width:100%;height:100%}
+.fi-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:5px}
+.fi-info h4{font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-info .d{font-size:11.5px;color:var(--tx3);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-meta{display:flex;gap:8px;align-items:center;font-size:10.5px;color:var(--tx3)}
+.fi-play{width:36px;height:36px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;flex:none;align-self:center;color:var(--gold)}
+
+/* ===== 场景库 ===== */
+.lib-top{margin:12px 0 14px}
+.lib-top h2{font-size:22px;font-weight:800}
+.search{display:flex;align-items:center;gap:9px;margin-top:13px;height:42px;border-radius:13px;background:var(--card);border:1px solid var(--line);padding:0 14px;color:var(--tx3);font-size:13px}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:14px -20px;padding:2px 20px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;font-size:12.5px;padding:8px 15px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--tx2);transition:.2s}
+.chip.on{background:var(--grad);color:#fff;border-color:transparent;font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.sc-card{border-radius:18px;overflow:hidden;background:var(--card);border:1px solid var(--line);cursor:pointer;transition:.2s}
+.sc-card:active{transform:scale(.97)}
+.sc-img{height:104px;position:relative}
+.sc-img svg.scene{position:absolute;inset:0;width:100%;height:100%}
+.sc-body{padding:11px 12px 13px}
+.sc-body h4{font-size:13.5px;font-weight:600;line-height:1.4}
+.sc-sub{display:flex;align-items:center;gap:6px;margin-top:7px;font-size:10.5px;color:var(--tx3)}
+.sc-sub .tag{padding:2px 7px;font-size:9.5px}
+
+/* ===== 详情页 ===== */
+.det-hero{position:relative;height:252px;margin:-52px 0 0}
+.det-hero svg.scene{position:absolute;inset:0;width:100%;height:100%}
+.det-veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,15,34,.42) 0%,rgba(10,15,34,0) 35%,rgba(10,15,34,.95) 96%)}
+.det-top{position:absolute;top:56px;left:16px;right:16px;display:flex;justify-content:space-between}
+.cir-btn{width:36px;height:36px;border-radius:50%;background:rgba(10,15,34,.5);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;color:#fff}
+.cir-btn .ic{width:18px;height:18px}
+.det-body{padding:0 20px 110px;position:relative;margin-top:-64px}
+.det-title{font-size:23px;font-weight:800}
+.det-author{display:flex;align-items:center;gap:7px;margin-top:9px;font-size:12px;color:var(--tx2)}
+.det-author .a-ic{width:18px;height:18px;border-radius:6px;background:var(--grad-gold);display:flex;align-items:center;justify-content:center;color:#3A2A10}
+.det-author .a-ic .ic{width:11px;height:11px}
+.det-stats{display:flex;gap:16px;margin-top:9px;font-size:11.5px;color:var(--tx3)}
+.det-stats b{color:var(--gold);font-weight:600}
+.det-desc{margin-top:14px;font-size:13.5px;line-height:1.9;color:var(--tx2)}
+.stops{margin-top:8px}
+.stop{display:flex;gap:13px;position:relative;padding-bottom:20px}
+.stop:last-child{padding-bottom:4px}
+.stop::before{content:"";position:absolute;left:6px;top:18px;bottom:0;width:1.5px;background:linear-gradient(180deg,rgba(240,206,142,.5),rgba(240,206,142,.08))}
+.stop:last-child::before{display:none}
+.stop i{width:13px;height:13px;border-radius:50%;background:var(--p-bg);border:2px solid var(--gold);flex:none;margin-top:3px;position:relative;z-index:1}
+.stop.f i{background:var(--gold);box-shadow:0 0 10px rgba(240,206,142,.6)}
+.stop .st{display:flex;flex-direction:column;gap:3px}
+.stop .st b{font-size:13.5px;font-weight:600}
+.stop .st span{font-size:11.5px;color:var(--tx3)}
+.stop .st em{font-style:normal;font-size:10.5px;color:var(--gold);opacity:.85}
+.track3{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.tk{display:flex;align-items:center;gap:11px}
+.tk .t-ic{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none}
+.tk .t-ic .ic{width:17px;height:17px}
+.tk .t-info{flex:1}
+.tk .t-top{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;margin-bottom:6px}
+.tk .t-top span{color:var(--tx3);font-weight:400;font-size:11px}
+.tk .bar{height:6px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
+.tk .bar i{display:block;height:100%;border-radius:99px}
+.tk .t-desc{font-size:10.5px;color:var(--tx3);margin-top:5px}
+.quote{margin-top:14px;padding:14px 15px;border-radius:15px;background:rgba(240,206,142,.07);border:1px solid rgba(240,206,142,.18);font-size:12.5px;color:var(--tx2);line-height:1.75}
+.quote b{color:var(--gold);font-weight:600;font-size:11px;display:block;margin-top:7px}
+.det-cta{position:absolute;left:0;right:0;bottom:0;padding:14px 20px 26px;background:linear-gradient(180deg,rgba(10,15,34,0),rgba(10,15,34,.92) 40%);backdrop-filter:blur(6px)}
+
+/* ===== 播放页 ===== */
+#page-player{padding-top:0}
+.pl-bg{position:absolute;inset:0;z-index:0}
+.pl-bg svg.scene{position:absolute;inset:0;width:100%;height:100%}
+.pl-veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,11,24,.5),rgba(7,11,24,.32) 40%,rgba(7,11,24,.78) 100%)}
+.pl-inner{position:relative;z-index:2;height:844px;display:flex;flex-direction:column;padding:56px 24px 26px}
+.pl-top{display:flex;align-items:center;justify-content:space-between}
+.pl-top .mid{text-align:center}
+.pl-top .mid .a{font-size:10.5px;letter-spacing:2px;color:var(--tx3)}
+.pl-top .mid .b{font-size:14px;font-weight:600;margin-top:3px}
+.breath-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0}
+.breath{position:relative;width:198px;height:198px;display:flex;align-items:center;justify-content:center}
+.breath .ring{position:absolute;border-radius:50%;border:1.5px solid rgba(240,206,142,.4)}
+.r1{inset:0;animation:breath 8s ease-in-out infinite}
+.r2{inset:22px;border-color:rgba(139,156,255,.35);animation:breath 8s ease-in-out infinite;animation-delay:-4s}
+.r3{inset:44px;border-color:rgba(255,255,255,.10);animation:breath 8s ease-in-out infinite}
+@keyframes breath{0%,100%{transform:scale(.9);opacity:.45}50%{transform:scale(1.05);opacity:1}}
+.b-core{width:112px;height:112px;border-radius:50%;background:radial-gradient(circle at 34% 30%,rgba(255,255,255,.16),rgba(139,156,255,.10) 60%,rgba(139,156,255,.02));backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:var(--gold);box-shadow:inset 0 0 30px rgba(240,206,142,.12)}
+.b-core .ic{width:30px;height:30px}
+.b-core span{font-size:9.5px;letter-spacing:2.5px;color:var(--tx2)}
+.journey{display:flex;flex-direction:column;align-items:center;margin-bottom:6px}
+.j-line{position:relative;width:270px;height:2px;background:rgba(255,255,255,.14);border-radius:99px}
+.j-line i{position:absolute;left:0;top:0;height:100%;width:58%;background:var(--grad-gold);border-radius:99px}
+.j-dots{display:flex;justify-content:space-between;width:300px;margin-top:-6px}
+.jd{display:flex;flex-direction:column;align-items:center;gap:7px;width:64px}
+.jd i{width:11px;height:11px;border-radius:50%;background:#3A4468;border:2px solid #3A4468}
+.jd.done i{background:var(--gold);border-color:var(--gold)}
+.jd.cur i{background:var(--p-bg);border-color:var(--gold);box-shadow:0 0 0 4px rgba(240,206,142,.22),0 0 14px rgba(240,206,142,.6)}
+.jd span{font-size:10px;color:var(--tx3);white-space:nowrap}
+.jd.done span,.jd.cur span{color:var(--tx2)}
+.jd.cur span{color:var(--gold)}
+.pl-ch{font-size:11px;letter-spacing:2px;color:var(--gold);text-align:center;opacity:.85}
+.pl-title{font-size:20px;font-weight:800;text-align:center;margin-top:6px}
+.pl-lyric{margin:12px auto 0;max-width:290px;text-align:center;font-size:12.5px;line-height:1.9;color:var(--tx2);opacity:.85}
+.pl-prog{margin-top:20px}
+.bar{height:4px;border-radius:99px;background:rgba(255,255,255,.14);position:relative}
+.bar .fill{position:absolute;left:0;top:0;height:100%;width:70%;border-radius:99px;background:var(--grad-gold)}
+.bar .dot{position:absolute;left:70%;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 0 10px rgba(240,206,142,.8)}
+.pl-times{display:flex;justify-content:space-between;font-size:10.5px;color:var(--tx3);margin-top:8px;font-variant-numeric:tabular-nums}
+.ctrl{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding:0 6px}
+.ctrl .c-side{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--tx2)}
+.ctrl .c-side .ic{width:20px;height:20px}
+.ctrl .c-side.fav{color:var(--gold)}
+.ctrl .c-skip{font-size:12px;font-weight:600;color:var(--tx2);width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.12)}
+.c-play{width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,#F5DFAE,#E8B07C);display:flex;align-items:center;justify-content:center;color:#3A2A10;box-shadow:0 10px 30px rgba(240,206,142,.35);transition:.2s}
+.c-play:active{transform:scale(.94)}
+.c-play .ic{width:28px;height:28px}
+.pl-tools{display:flex;justify-content:center;margin-top:16px}
+.tool-chip{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--tx2);padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10)}
+.tool-chip .ic{width:15px;height:15px;color:var(--gold)}
+
+/* ===== 工坊 ===== */
+.stu-head{margin:12px 0 4px}
+.stu-head h2{font-size:22px;font-weight:800}
+.stu-head p{font-size:12.5px;color:var(--tx3);margin-top:5px;line-height:1.6}
+.stu-step{padding:16px;margin-top:14px}
+.stu-step .lab{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.stu-step .lab i{width:22px;height:22px;border-radius:8px;background:var(--grad);color:#fff;font-style:normal;font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.stu-step .lab b{font-size:14px}
+.stu-step .lab span{font-size:11px;color:var(--tx3);margin-left:auto}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{font-size:12.5px;padding:8px 14px;border-radius:11px;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--tx2);transition:.15s}
+.opt.on{background:rgba(139,156,255,.18);border-color:rgba(139,156,255,.6);color:#C9D0FF;font-weight:600}
+.gen-btn{margin-top:18px}
+.gen-box{margin-top:16px;padding:16px;display:none}
+.gen-box.show{display:block;animation:fadeUp .4s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.gs{display:flex;align-items:center;gap:11px;padding:9px 0;color:var(--tx3);font-size:13px;transition:.3s}
+.gs .gdot{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--tx3);display:flex;align-items:center;justify-content:center;flex:none;transition:.3s}
+.gs .gdot::after{content:"";width:7px;height:7px;border-radius:50%;background:transparent;transition:.3s}
+.gs.run{color:var(--tx)}
+.gs.run .gdot{border-color:var(--vio);animation:pulse 1s ease-in-out infinite}
+.gs.done{color:var(--tx2)}
+.gs.done .gdot{border-color:var(--green);background:rgba(123,232,176,.12)}
+.gs.done .gdot::after{background:var(--green)}
+@keyframes pulse{50%{box-shadow:0 0 0 5px rgba(139,156,255,.14)}}
+.gen-result{display:none;margin-top:14px;padding:16px;border-radius:18px;background:linear-gradient(135deg,rgba(240,206,142,.13),rgba(197,139,255,.10));border:1px solid rgba(240,206,142,.35)}
+.gen-result.show{display:block;animation:fadeUp .4s ease}
+.gen-result h5{font-size:15px;color:var(--gold)}
+.gen-result p{font-size:11.5px;color:var(--tx2);margin-top:6px;line-height:1.7}
+
+/* ===== 我的 ===== */
+.me-card{display:flex;align-items:center;gap:14px;padding:18px;margin-top:14px}
+.me-ava{width:62px;height:62px;border-radius:21px;background:linear-gradient(135deg,#5A6BD8,#9A6BD8);display:flex;align-items:center;justify-content:center;position:relative;flex:none}
+.me-ava .ic{width:30px;height:30px;color:#fff;opacity:.9}
+.me-ava .lv{position:absolute;right:-5px;bottom:-5px;font-size:8.5px;font-weight:700;background:var(--grad-gold);color:#3A2A10;padding:2px 6px;border-radius:7px}
+.me-name{font-size:18px;font-weight:700}
+.me-sub{display:flex;align-items:center;gap:6px;margin-top:6px}
+.vip{font-size:10px;font-weight:600;color:#3A2A10;background:var(--grad-gold);padding:3px 9px;border-radius:99px}
+.me-sub span{font-size:11px;color:var(--tx3)}
+.me-stats{display:flex;margin-top:12px;padding:15px 6px}
+.me-stats .st{flex:1;text-align:center;position:relative}
+.me-stats .st+.st::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:1px;background:var(--line)}
+.me-stats b{font-size:19px;font-weight:800;display:block}
+.me-stats span{font-size:10.5px;color:var(--tx3);margin-top:3px;display:block}
+.menu{margin-top:12px;overflow:hidden}
+.mi{display:flex;align-items:center;gap:13px;padding:15px 16px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;transition:.15s}
+.mi:last-child{border-bottom:none}
+.mi:active{background:rgba(255,255,255,.04)}
+.mi .m-ic{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none}
+.mi .m-ic .ic{width:17px;height:17px}
+.mi b{font-size:14px;font-weight:500;flex:1}
+.mi .arr{color:var(--tx3);width:15px;height:15px}
+.mi .badge{font-size:10px;color:var(--gold);background:rgba(240,206,142,.13);border:1px solid rgba(240,206,142,.3);padding:2px 8px;border-radius:99px}
+
+/* ===== 报告 ===== */
+.rp-head{display:flex;align-items:center;gap:6px;margin:12px 0 14px;font-size:17px;font-weight:700}
+.rp-head .ic{width:19px;height:19px;color:var(--gold)}
+.rp-week{display:flex;justify-content:space-between;font-size:11px;color:var(--tx3);margin-top:12px}
+.rp-chart{margin-top:10px}
+.rp-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+.rp-cell{padding:13px 12px;text-align:center}
+.rp-cell b{font-size:17px;font-weight:800;display:block}
+.rp-cell b em{font-style:normal;font-size:10px;font-weight:400;margin-left:2px}
+.rp-cell span{font-size:10.5px;color:var(--tx3);display:block;margin-top:4px}
+.rp-cell .up{color:var(--green);font-size:10px;display:block;margin-top:3px}
+.rp-top{display:flex;gap:10px;margin-top:12px}
+.rp-top .t{flex:1;padding:11px;border-radius:14px;text-align:center}
+.t-img{position:relative;height:54px;border-radius:10px;overflow:hidden;margin-bottom:9px}
+.rp-top .t b{font-size:11.5px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-top .t span{font-size:10px;color:var(--tx3);margin-top:4px;display:block}
+
+/* ===== TabBar / MiniPlayer / Sheet ===== */
+.tabbar{position:absolute;left:0;right:0;bottom:0;height:84px;z-index:60;display:none;align-items:flex-start;justify-content:space-around;padding:9px 12px 0;background:linear-gradient(180deg,rgba(12,17,38,.72),rgba(9,13,30,.96));backdrop-filter:blur(22px);border-top:1px solid rgba(255,255,255,.07)}
+.tabbar.show{display:flex}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--tx3);font-size:10px;transition:.2s;max-width:86px}
+.tab .ic{width:22px;height:22px}
+.tab.on{color:var(--vio)}
+.tab.mid i{width:46px;height:46px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;color:#fff;margin-top:-16px;box-shadow:0 8px 22px rgba(139,156,255,.45);border:4px solid #0B1126}
+.tab.mid{color:var(--tx2)}
+.tab.mid .ic{width:20px;height:20px}
+.mini{position:absolute;left:14px;right:14px;bottom:96px;z-index:55;display:none;align-items:center;gap:11px;padding:8px 10px;border-radius:16px;background:rgba(22,28,56,.82);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.12);box-shadow:0 12px 30px rgba(0,0,0,.45);cursor:pointer}
+.mini.show{display:flex}
+.mini .mimg{width:38px;height:38px;border-radius:11px;overflow:hidden;position:relative;flex:none}
+.mini .mimg svg{position:absolute;inset:0;width:100%;height:100%}
+.mini .mt{flex:1;min-width:0}
+.mini .mt b{font-size:12.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .mt span{font-size:10px;color:var(--tx3)}
+.mini .eq{display:flex;align-items:flex-end;gap:2px;height:14px}
+.mini .eq i{width:3px;background:var(--gold);border-radius:2px;animation:eq 1s ease-in-out infinite}
+.mini .eq i:nth-child(2){animation-delay:.25s}.mini .eq i:nth-child(3){animation-delay:.5s}
+@keyframes eq{0%,100%{height:5px}50%{height:14px}}
+.sheet-mask{position:absolute;inset:0;background:rgba(4,7,16,.6);backdrop-filter:blur(3px);z-index:88;opacity:0;pointer-events:none;transition:.3s}
+.sheet-mask.show{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:90;background:rgba(19,25,52,.96);backdrop-filter:blur(26px);border-radius:26px 26px 0 0;border-top:1px solid rgba(255,255,255,.10);padding:14px 22px 34px;transform:translateY(105%);transition:transform .34s cubic-bezier(.32,.72,.25,1)}
+.sheet.show{transform:none}
+.sheet .grab{width:38px;height:4.5px;border-radius:99px;background:rgba(255,255,255,.16);margin:0 auto 16px}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sheet-head h4{font-size:16.5px;font-weight:700}
+.sheet-head p{font-size:11px;color:var(--tx3);margin-top:3px}
+.sheet-x{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;color:var(--tx2)}
+.sheet-x .ic{width:15px;height:15px}
+.mix-row{display:flex;align-items:center;gap:13px;padding:11px 0}
+.mix-row .m-ic{width:38px;height:38px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex:none}
+.mix-row .m-ic .ic{width:18px;height:18px}
+.mix-info{flex:1}
+.mix-top{display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:8px}
+.mix-top span{color:var(--gold);font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;width:100%;height:5px;border-radius:99px;background:rgba(255,255,255,.12);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer}
+.sheet-tip{margin-top:14px;font-size:11px;color:var(--tx3);text-align:center;line-height:1.6}
+.timer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.t-opt{height:56px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13.5px;font-weight:600;color:var(--tx2);transition:.15s}
+.t-opt span{font-size:9.5px;color:var(--tx3);font-weight:400}
+.t-opt.on{background:rgba(240,206,142,.15);border-color:rgba(240,206,142,.55);color:var(--gold)}
+</style>
+</head>
+<body>
+
+<!-- ============ SVG 图标库 ============ -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-logo" viewBox="0 0 24 24"><path d="M20.5 14.5A8.6 8.6 0 1 1 9.5 3.4a7.2 7.2 0 0 0 11 11.1Z" fill="currentColor"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></symbol>
+  <symbol id="i-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.2"/><path d="m15.8 15.8 4.2 4.2"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8.2 5.4c0-1 1.1-1.7 2-1.1l10 6.6c.8.5.8 1.7 0 2.2l-10 6.6c-.9.6-2-.1-2-1.1V5.4Z" fill="currentColor"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="4.5" width="4" height="15" rx="1.6" fill="currentColor"/><rect x="13.5" y="4.5" width="4" height="15" rx="1.6" fill="currentColor"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 20.5S3.5 15.5 3.5 9.6C3.5 6.8 5.7 4.5 8.4 4.5c1.5 0 2.8.7 3.6 1.9.8-1.2 2.1-1.9 3.6-1.9 2.7 0 4.9 2.3 4.9 5.1 0 5.9-8.5 10.9-8.5 10.9Z"/></symbol>
+  <symbol id="i-heart-f" viewBox="0 0 24 24"><path d="M12 20.5S3.5 15.5 3.5 9.6C3.5 6.8 5.7 4.5 8.4 4.5c1.5 0 2.8.7 3.6 1.9.8-1.2 2.1-1.9 3.6-1.9 2.7 0 4.9 2.3 4.9 5.1 0 5.9-8.5 10.9-8.5 10.9Z" fill="currentColor"/></symbol>
+  <symbol id="i-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="13.4" r="7.1"/><path d="M12 13.4V9.8M9.5 3h5"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h11M4 17h7"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.6"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3.5 6.2 9 4.3l6 2 5.5-1.9v13.4L15 19.7l-6-2-5.5 1.9V6.2Z"/><path d="M9 4.3v13.4M15 6.3v13.4"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 2.8c.9 4.5 3.4 7 8 8-4.6 1-7.1 3.5-8 8-.9-4.5-3.4-7-8-8 4.6-1 7.1-3.5 8-8Z" fill="currentColor"/><path d="M19 2.6c.3 1.5 1.1 2.3 2.6 2.6-1.5.3-2.3 1.1-2.6 2.6-.3-1.5-1.1-2.3-2.6-2.6 1.5-.3 2.3-1.1 2.6-2.6Z" fill="currentColor" opacity=".7"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8.2" r="3.7"/><path d="M4.8 20c.7-4 3.6-5.8 7.2-5.8s6.5 1.8 7.2 5.8"/></symbol>
+  <symbol id="i-mixer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="9.5" r="2.4" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="2.4" fill="currentColor" stroke="none"/><circle cx="18" cy="7" r="2.4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.2 14.6A8.4 8.4 0 1 1 9.4 3.8a6.9 6.9 0 0 0 10.8 10.8Z" fill="currentColor"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 6.5 12 3l4 3.5M5 12v7.5h14V12"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v11M8 11l4 4 4-4M4.5 19.5h15"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M8 14.5l2.6-3 2.4 2 3-4"/></symbol>
+  <symbol id="i-set" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8.5h9M17 8.5h3M4 15.5h3M11 15.5h9"/><circle cx="15" cy="8.5" r="2.2"/><circle cx="9" cy="15.5" r="2.2"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9.2" y="3" width="5.6" height="10.5" rx="2.8"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5S5.5 10 5.5 14.5a6.5 6.5 0 0 0 13 0C18.5 10 12 3.5 12 3.5Z"/><path d="M9.5 14.5a2.8 2.8 0 0 0 2.5 2.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 18.5V6l10-2v12.5"/><circle cx="6.8" cy="18.5" r="2.6"/><circle cx="16.8" cy="16.5" r="2.6"/></symbol>
+  <symbol id="i-mtn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="m2.5 18.5 6-10 4 6.6 2.6-4 6.4 7.4H2.5Z"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9.5c2-2.3 4-2.3 6 0s4 2.3 6 0 4-2.3 6 0M3 15c2-2.3 4-2.3 6 0s4 2.3 6 0 4-2.3 6 0"/></symbol>
+  <symbol id="i-town" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><path d="M3.5 11 12 4l8.5 7M6 10.5V19h12v-8.5M10 19v-5h4v5"/></symbol>
+  <symbol id="i-snow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9M12 3l-2 2M12 3l2 2M12 21l-2-2M12 21l2-2"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5c.8 3.8 2.9 5.9 6.8 6.8-3.9.9-6 3-6.8 6.8-.8-3.8-2.9-5.9-6.8-6.8 3.9-.9 6-3 6.8-6.8Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="i-flower" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="2.4"/><circle cx="12" cy="6.3" r="2.6"/><circle cx="12" cy="17.7" r="2.6"/><circle cx="6.3" cy="12" r="2.6"/><circle cx="17.7" cy="12" r="2.6"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V4M6 4.8h11l-2.5 3.5L17 12H6"/></symbol>
+  <symbol id="i-tv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6.5" width="18" height="12" rx="2.5"/><path d="m9 10 4.5 2.5L9 15v-5Z"/></symbol>
+</svg>
+
+<!-- ============ 顶部原型导航 ============ -->
+<header class="proto-header">
+  <div class="ph-brand">
+    <div class="ph-logo"><svg class="ic"><use href="#i-logo"/></svg></div>
+    <div>
+      <div class="ph-title">神游 · 助眠音景 App 原型</div>
+      <div class="ph-sub">v1.0 ｜ 场景化旅程音频 · AI 协同创作 ｜ 2026-09-25</div>
+    </div>
+  </div>
+  <nav class="ph-nav">
+    <button class="ph-chip on" data-nav="page-home">发现</button>
+    <button class="ph-chip" data-nav="page-library">场景库</button>
+    <button class="ph-chip" data-nav="page-detail">旅程详情</button>
+    <button class="ph-chip" data-nav="page-player">播放页</button>
+    <button class="ph-chip" data-nav="page-player" data-sheet="sheet-timer">定时面板</button>
+    <button class="ph-chip" data-nav="page-studio">梦境工坊</button>
+    <button class="ph-chip" data-nav="page-mine">我的</button>
+    <button class="ph-chip" data-nav="page-report">睡眠报告</button>
+  </nav>
+</header>
+
+<div class="stage">
+
+  <!-- ============ 左侧：手机原型 ============ -->
+  <div id="phoneBox">
+  <div class="phone" id="phone">
+    <div class="notch"></div>
+    <div class="statusbar">
+      <span>9:41</span>
+      <div class="sb-r">
+        <svg width="17" height="11" viewBox="0 0 17 11"><g fill="#fff"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1" opacity=".4"/></g></svg>
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><path d="M1.5 4A9.4 9.4 0 0 1 14.5 4M4 6.8a5.8 5.8 0 0 1 8 0"/><circle cx="8" cy="9.4" r="1.1" fill="#fff" stroke="none"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3.5" fill="none" stroke="#fff" opacity=".5"/><rect x="2" y="2" width="15" height="8" rx="2" fill="#fff"/><rect x="22.5" y="4" width="2" height="4" rx="1" fill="#fff" opacity=".5"/></svg>
+      </div>
+    </div>
+
+    <div class="screens">
+
+      <!-- ================= 页面 1：发现（首页） ================= -->
+      <section class="screen pad active" id="page-home">
+        <div class="home-top">
+          <div>
+            <div class="hi">晚上好，<em>愿今夜好梦</em></div>
+            <div class="date">9月25日 · 星期五 · 宜早睡</div>
+          </div>
+          <div class="avatar" data-goto="page-mine"><svg class="scene" viewBox="0 0 40 40"><rect width="40" height="40" fill="#3B3F6E"/><circle cx="14" cy="16" r="6" fill="#F0CE8E" opacity=".85"/><path d="M6 40c1-9 7-12 14-12s13 3 14 12Z" fill="#5A6BD8"/><circle cx="31" cy="9" r="1.2" fill="#fff" opacity=".8"/><circle cx="25" cy="5" r=".9" fill="#fff" opacity=".6"/></svg></div>
+        </div>
+
+        <!-- 今夜入梦主推位 -->
+        <div class="hero" data-scene="hokkaido" data-goto="page-detail">
+          <div class="hero-veil"></div>
+          <div class="hero-info">
+            <span class="tag g">今夜入梦 · 第 12 晚</span>
+            <h2>北海道雪夜列车</h2>
+            <p>车轮碾过粉雪平原，车窗暖光映着白桦林一闪而过，北国的夜安静得能听见雪落。</p>
+            <div class="hero-meta">
+              <span class="m">铁路之旅 · 58 分钟 · 12.6 万人乘过</span>
+              <span class="go-btn">立即出发 <svg class="ic" style="width:13px;height:13px"><use href="#i-arr"/></svg></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 场景分类 -->
+        <div class="cats">
+          <div class="cat" data-goto="page-library"><i><svg class="ic" style="width:24px;height:24px"><use href="#i-mtn"/></svg></i><span>山川</span></div>
+          <div class="cat" data-goto="page-library"><i><svg class="ic" style="width:24px;height:24px"><use href="#i-wave"/></svg></i><span>湖海</span></div>
+          <div class="cat" data-goto="page-library"><i><svg class="ic" style="width:24px;height:24px"><use href="#i-town"/></svg></i><span>古镇</span></div>
+          <div class="cat" data-goto="page-library"><i><svg class="ic" style="width:24px;height:24px"><use href="#i-snow"/></svg></i><span>雪原</span></div>
+          <div class="cat" data-goto="page-library"><i><svg class="ic" style="width:24px;height:24px"><use href="#i-star"/></svg></i><span>星空</span></div>
+          <div class="cat" data-goto="page-library"><i><svg class="ic" style="width:24px;height:24px"><use href="#i-flower"/></svg></i><span>花田</span></div>
+        </div>
+
+        <!-- 为你挑选 -->
+        <div class="sec-title"><h3>为你挑选</h3><span>按你的入睡习惯生成</span></div>
+        <div class="feed-item card" data-scene="lijiang" data-goto="page-detail">
+          <div class="thumb"></div>
+          <div class="fi-info">
+            <h4>漓江烟雨 · 竹筏慢游</h4>
+            <div class="d">山雾漫过江面，橹声欸乃，两岸青影渐隐入夜色</div>
+            <div class="fi-meta"><span class="tag">水路之旅</span><span>46 分钟</span></div>
+          </div>
+          <div class="fi-play"><svg class="ic" style="width:15px;height:15px"><use href="#i-play"/></svg></div>
+        </div>
+        <div class="feed-item card" data-scene="kyoto" data-goto="page-detail">
+          <div class="thumb"></div>
+          <div class="fi-info">
+            <h4>京都雨巷 · 纸伞漫步</h4>
+            <div class="d">灯笼映着湿漉的石板路，雨打伞面，如低声絮语</div>
+            <div class="fi-meta"><span class="tag">徒步之旅</span><span>39 分钟</span></div>
+          </div>
+          <div class="fi-play"><svg class="ic" style="width:15px;height:15px"><use href="#i-play"/></svg></div>
+        </div>
+        <div class="feed-item card" data-scene="sahara" data-goto="page-detail">
+          <div class="thumb"></div>
+          <div class="fi-info">
+            <h4>撒哈拉星幕营地</h4>
+            <div class="d">沙丘背风处升起篝火，银河低垂，风掠过帐沿</div>
+            <div class="fi-meta"><span class="tag">星空营地</span><span>52 分钟</span></div>
+          </div>
+          <div class="fi-play"><svg class="ic" style="width:15px;height:15px"><use href="#i-play"/></svg></div>
+        </div>
+        <div style="height:180px"></div>
+      </section>
+
+      <!-- ================= 页面 2：场景库 ================= -->
+      <section class="screen pad" id="page-library">
+        <div class="lib-top">
+          <h2>场景库</h2>
+          <div class="search"><svg class="ic" style="width:17px;height:17px"><use href="#i-search"/></svg>想去哪里入眠？例如「洱海」「雪国列车」</div>
+        </div>
+        <div class="chips">
+          <span class="chip on">全部</span><span class="chip">铁路之旅</span><span class="chip">水路之旅</span><span class="chip">徒步之旅</span><span class="chip">公路之旅</span><span class="chip">飞行之旅</span><span class="chip">星空营地</span>
+        </div>
+        <div class="grid2">
+          <div class="sc-card" data-scene="lijiang" data-goto="page-detail"><div class="sc-img"></div><div class="sc-body"><h4>漓江烟雨 · 竹筏慢游</h4><div class="sc-sub"><span class="tag">水路</span><span>46 分钟</span></div></div></div>
+          <div class="sc-card" data-scene="hokkaido" data-goto="page-detail"><div class="sc-img"></div><div class="sc-body"><h4>北海道雪夜列车</h4><div class="sc-sub"><span class="tag">铁路</span><span>58 分钟</span></div></div></div>
+          <div class="sc-card" data-scene="kyoto" data-goto="page-detail"><div class="sc-img"></div><div class="sc-body"><h4>京都雨巷 · 纸伞漫步</h4><div class="sc-sub"><span class="tag">徒步</span><span>39 分钟</span></div></div></div>
+          <div class="sc-card" data-scene="qinghai" data-goto="page-detail"><div class="sc-img"></div><div class="sc-body"><h4>青海湖夜航 · 湖畔星野</h4><div class="sc-sub"><span class="tag">水路</span><span>60 分钟</span></div></div></div>
+          <div class="sc-card" data-scene="sahara" data-goto="page-detail"><div class="sc-img"></div><div class="sc-body"><h4>撒哈拉星幕营地</h4><div class="sc-sub"><span class="tag">营地</span><span>52 分钟</span></div></div></div>
+          <div class="sc-card" data-scene="iceland" data-goto="page-detail"><div class="sc-img"></div><div class="sc-body"><h4>冰岛极光观测之夜</h4><div class="sc-sub"><span class="tag">徒步</span><span>47 分钟</span></div></div></div>
+        </div>
+        <div style="height:180px"></div>
+      </section>
+
+      <!-- ================= 页面 3：旅程详情 ================= -->
+      <section class="screen" id="page-detail" style="padding-top:0">
+        <div class="det-hero">
+          <div data-scene="qinghai" style="position:absolute;inset:0"></div>
+          <div class="det-veil"></div>
+          <div class="det-top">
+            <button class="cir-btn" data-back><svg class="ic"><use href="#i-back"/></svg></button>
+            <button class="cir-btn"><svg class="ic"><use href="#i-share"/></svg></button>
+          </div>
+        </div>
+        <div class="det-body">
+          <h2 class="det-title">青海湖夜航 · 湖畔星野</h2>
+          <div class="det-author"><span class="a-ic"><svg class="ic"><use href="#i-sparkle"/></svg></span>神游音景工坊 · AI 共创 · 主播 晚风</div>
+          <div class="det-stats"><span><b>4.9</b> 分</span><span>60 分钟</span><span>8.2 万人听过</span><span>更新于 9 月</span></div>
+          <p class="det-desc">从黄昏的湖畔栈道出发，木舟缓缓离岸。桨声、水声与远山的风声层层铺开，你将穿过芦苇浅滩，抵达湖心的月光里——困意会随雾气一同漫上来。</p>
+
+          <div class="sec-title"><h3>旅程站点</h3><span>站点式叙事 · 随旁白前行</span></div>
+          <div class="stops">
+            <div class="stop f"><i></i><div class="st"><b>21:00 湖畔栈道 · 启程</b><span>木舟离岸，桨声入水，白日的杂念渐远</span></div></div>
+            <div class="stop"><i></i><div class="st"><b>21:12 芦苇浅滩 · 水鸟低鸣</b><span>苇叶沙沙，远处水鸟掠过暮色</span></div></div>
+            <div class="stop"><i></i><div class="st"><b>21:34 湖心月影 · 舟自横</b><span>弃桨任舟漂流，月光调得很淡很淡</span><em>多数听众在此站入睡</em></div></div>
+            <div class="stop"><i></i><div class="st"><b>22:00 星野客栈 · 渐入梦乡</b><span>声音渐弱，只剩湖水轻拍岸沿</span></div></div>
+          </div>
+
+          <div class="sec-title"><h3>音景构成</h3><span>三轨独立混音</span></div>
+          <div class="track3">
+            <div class="tk"><div class="t-ic" style="background:rgba(139,156,255,.16);color:#B9C2FF"><svg class="ic"><use href="#i-mic"/></svg></div><div class="t-info"><div class="t-top">旁白引导<span>40%</span></div><div class="bar"><i style="width:40%;background:var(--grad)"></i></div><div class="t-desc">低语式导览，语速随旅程渐缓</div></div></div>
+            <div class="tk"><div class="t-ic" style="background:rgba(123,232,176,.13);color:#9FE8C4"><svg class="ic"><use href="#i-drop"/></svg></div><div class="t-info"><div class="t-top">环境音<span>35%</span></div><div class="bar"><i style="width:35%;background:linear-gradient(90deg,#6FD8A8,#7BE8B0)"></i></div><div class="t-desc">桨声 · 水声 · 虫鸣 · 远山风声</div></div></div>
+            <div class="tk"><div class="t-ic" style="background:rgba(240,206,142,.13);color:var(--gold)"><svg class="ic"><use href="#i-note"/></svg></div><div class="t-info"><div class="t-top">背景音乐<span>25%</span></div><div class="bar"><i style="width:25%;background:var(--grad-gold)"></i></div><div class="t-desc">古筝与弦乐铺底，60 BPM 贴合心率</div></div></div>
+          </div>
+
+          <div class="quote">「第 3 站开始就迷糊了，像真的躺在船上。」<b>—— 听众 · 晚风拾陆（示例评论）</b></div>
+          <div style="height:8px"></div>
+        </div>
+        <div class="det-cta"><button class="btn-p" data-goto="page-player"><svg class="ic" style="width:17px;height:17px"><use href="#i-play"/></svg>开始这段旅程</button></div>
+      </section>
+
+      <!-- ================= 页面 4：播放页 ================= -->
+      <section class="screen" id="page-player">
+        <div class="pl-bg"><div data-scene="lake" style="position:absolute;inset:0"></div><div class="pl-veil"></div></div>
+        <div class="pl-inner">
+          <div class="pl-top">
+            <button class="cir-btn" data-back><svg class="ic"><use href="#i-back"/></svg></button>
+            <div class="mid"><div class="a">神 游</div><div class="b">青海湖夜航 · 湖畔星野</div></div>
+            <button class="cir-btn" data-sheet="sheet-timer"><svg class="ic"><use href="#i-timer"/></svg></button>
+          </div>
+
+          <div class="breath-wrap">
+            <div class="breath">
+              <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+              <div class="b-core"><svg class="ic"><use href="#i-moon"/></svg><span>正在伴眠</span></div>
+            </div>
+          </div>
+
+          <div class="journey">
+            <div class="j-line"><i></i></div>
+            <div class="j-dots">
+              <div class="jd done"><i></i><span>启程</span></div>
+              <div class="jd done"><i></i><span>浅滩</span></div>
+              <div class="jd cur"><i></i><span>湖心</span></div>
+              <div class="jd"><i></i><span>客栈</span></div>
+            </div>
+          </div>
+
+          <div class="pl-ch">第 2 章 · 共 4 章</div>
+          <div class="pl-title">湖心月影</div>
+          <p class="pl-lyric">桨声轻响，木舟缓缓离岸。远处的渔火一点一点暗下去，湖面浮起薄薄的雾——像谁把月光，调得很淡、很淡。</p>
+
+          <div class="pl-prog">
+            <div class="bar"><div class="fill"></div><div class="dot"></div></div>
+            <div class="pl-times"><span>12:45</span><span>18:20</span></div>
+          </div>
+
+          <div class="ctrl">
+            <button class="c-side"><svg class="ic"><use href="#i-list"/></svg></button>
+            <button class="c-skip">-15s</button>
+            <button class="c-play" id="playToggle"><svg class="ic" id="playIcon"><use href="#i-pause"/></svg></button>
+            <button class="c-skip">+15s</button>
+            <button class="c-side fav"><svg class="ic"><use href="#i-heart-f"/></svg></button>
+          </div>
+
+          <div class="pl-tools">
+            <button class="tool-chip" data-sheet="sheet-mix"><svg class="ic"><use href="#i-mixer"/></svg>音景调音台</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 页面 5：梦境工坊 ================= -->
+      <section class="screen pad" id="page-studio">
+        <div class="stu-head">
+          <h2>梦境工坊</h2>
+          <p>与 AI 协同共创：选择目的地与氛围元素，AI 撰写旅程剧本、合成语音、混录音景，生成专属助眠旅程。</p>
+        </div>
+
+        <div class="stu-step card">
+          <div class="lab"><i>1</i><b>选择目的地</b><span>单选</span></div>
+          <div class="opts" id="optDest">
+            <span class="opt">江南水乡</span><span class="opt on">大漠星空</span><span class="opt">雪山温泉</span><span class="opt">海边小屋</span><span class="opt">森林木屋</span><span class="opt">自定义…</span>
+          </div>
+        </div>
+        <div class="stu-step card">
+          <div class="lab"><i>2</i><b>氛围元素</b><span>可多选</span></div>
+          <div class="opts" id="optVibe">
+            <span class="opt">细雨</span><span class="opt on">篝火</span><span class="opt on">晚风</span><span class="opt">风铃</span><span class="opt">虫鸣</span><span class="opt">炉火</span><span class="opt">汽笛</span><span class="opt">马蹄</span>
+          </div>
+        </div>
+        <div class="stu-step card">
+          <div class="lab"><i>3</i><b>旅伴声线</b><span>单选</span></div>
+          <div class="opts" id="optVoice">
+            <span class="opt">温柔女声 · 絮语</span><span class="opt on">醇厚男声 · 低语</span><span class="opt">轻缓旁白 · 叙述</span>
+          </div>
+        </div>
+
+        <button class="btn-p gen-btn" id="btnGen"><svg class="ic" style="width:17px;height:17px"><use href="#i-sparkle"/></svg>生成我的旅程</button>
+
+        <div class="gen-box card" id="genBox">
+          <div class="gs" data-s="1"><span class="gdot"></span>撰写旅程剧本 · 大漠星空 × 篝火晚风</div>
+          <div class="gs" data-s="2"><span class="gdot"></span>合成语音 · 醇厚男声 · 低语模式</div>
+          <div class="gs" data-s="3"><span class="gdot"></span>混录音景 · 环境音 + 背景配乐</div>
+        </div>
+        <div class="gen-result" id="genResult">
+          <h5>「大漠星空 · 篝火夜话」已就绪</h5>
+          <p>全长 48 分钟 · 4 个旅程站点 · 预览版音景已生成，正式版将按你的收听反馈微调声线与配乐比例。</p>
+          <div style="height:12px"></div>
+          <button class="btn-g" data-goto="page-player">立即试听</button>
+        </div>
+
+        <div class="sec-title"><h3>我的定制</h3><span>2 个旅程</span></div>
+        <div class="feed-item card" data-scene="lijiang" data-goto="page-detail">
+          <div class="thumb"></div>
+          <div class="fi-info">
+            <h4>梅雨时节的周庄乌篷船</h4>
+            <div class="d">细雨打篷，橹声摇碎一河灯影</div>
+            <div class="fi-meta"><span class="tag">AI 共创</span><span>42 分钟</span></div>
+          </div>
+          <div class="fi-play"><svg class="ic" style="width:15px;height:15px"><use href="#i-play"/></svg></div>
+        </div>
+        <div class="feed-item card" data-scene="iceland" data-goto="page-detail">
+          <div class="thumb"></div>
+          <div class="fi-info">
+            <h4>雪山脚下的温泉旅馆</h4>
+            <div class="d">汤雾氤氲，雪落无声，木窗透出暖光</div>
+            <div class="fi-meta"><span class="tag">AI 共创</span><span>50 分钟</span></div>
+          </div>
+          <div class="fi-play"><svg class="ic" style="width:15px;height:15px"><use href="#i-play"/></svg></div>
+        </div>
+        <div style="height:180px"></div>
+      </section>
+
+      <!-- ================= 页面 6：我的 ================= -->
+      <section class="screen pad" id="page-mine">
+        <div class="me-card card">
+          <div class="me-ava"><svg class="ic"><use href="#i-user"/></svg><span class="lv">Lv.3</span></div>
+          <div style="flex:1">
+            <div class="me-name">晚风拾陆</div>
+            <div class="me-sub"><span class="vip">梦境会员</span><span>已伴眠 126 晚</span></div>
+          </div>
+          <svg class="ic" style="width:16px;height:16px;color:var(--tx3)"><use href="#i-arr"/></svg>
+        </div>
+
+        <div class="me-stats card">
+          <div class="st"><b>12</b><span>连续入眠晚数</span></div>
+          <div class="st"><b>5</b><span>本周旅程</span></div>
+          <div class="st"><b>28</b><span>收藏</span></div>
+        </div>
+
+        <div class="menu card">
+          <div class="mi" data-goto="page-report"><div class="m-ic" style="background:rgba(139,156,255,.15);color:#B9C2FF"><svg class="ic"><use href="#i-doc"/></svg></div><b>睡眠报告</b><span class="badge">周报已生成</span><svg class="ic arr"><use href="#i-arr"/></svg></div>
+          <div class="mi"><div class="m-ic" style="background:rgba(240,206,142,.13);color:var(--gold)"><svg class="ic"><use href="#i-heart"/></svg></div><b>我的收藏</b><svg class="ic arr"><use href="#i-arr"/></svg></div>
+          <div class="mi"><div class="m-ic" style="background:rgba(123,232,176,.12);color:#9FE8C4"><svg class="ic"><use href="#i-list"/></svg></div><b>收听历史</b><svg class="ic arr"><use href="#i-arr"/></svg></div>
+          <div class="mi"><div class="m-ic" style="background:rgba(197,139,255,.14);color:#D5B6FF"><svg class="ic"><use href="#i-download"/></svg></div><b>离线下载</b><svg class="ic arr"><use href="#i-arr"/></svg></div>
+          <div class="mi" data-goto="page-studio"><div class="m-ic" style="background:rgba(139,156,255,.15);color:#B9C2FF"><svg class="ic"><use href="#i-sparkle"/></svg></div><b>我的定制旅程</b><span class="badge">2 个</span><svg class="ic arr"><use href="#i-arr"/></svg></div>
+          <div class="mi"><div class="m-ic" style="background:rgba(255,255,255,.07);color:var(--tx2)"><svg class="ic"><use href="#i-set"/></svg></div><b>设置</b><svg class="ic arr"><use href="#i-arr"/></svg></div>
+        </div>
+        <div style="height:190px"></div>
+      </section>
+
+      <!-- ================= 页面 7：睡眠报告 ================= -->
+      <section class="screen pad" id="page-report">
+        <div class="rp-head"><button data-back style="color:var(--tx)"><svg class="ic" style="width:20px;height:20px"><use href="#i-back"/></svg></button>睡眠报告</div>
+        <div class="card" style="padding:16px">
+          <div class="sec-title" style="margin:0 0 4px"><h3 style="font-size:15px">本周睡眠时长</h3><span>9.19 – 9.25（示例数据）</span></div>
+          <div class="rp-chart" id="chartBox"></div>
+          <div class="rp-week"><span>9.19</span><span>9.20</span><span>9.21</span><span>9.22</span><span>9.23</span><span>9.24</span><span>今天</span></div>
+        </div>
+        <div class="rp-grid">
+          <div class="rp-cell card"><b>18<em>分钟</em></b><span>平均入睡用时</span><span class="up">较上周 -6 分钟</span></div>
+          <div class="rp-cell card"><b>0.8<em>次</em></b><span>平均夜醒次数</span><span class="up">较上周 -0.3 次</span></div>
+          <div class="rp-cell card"><b>6.5<em>小时</em></b><span>累计伴眠时长</span><span class="up">连续 12 晚</span></div>
+        </div>
+        <div class="sec-title"><h3>最常伴眠场景</h3><span>本周</span></div>
+        <div class="rp-top">
+          <div class="t card"><div class="t-img" data-scene="qinghai"></div><b>青海湖夜航</b><span>3 晚</span></div>
+          <div class="t card"><div class="t-img" data-scene="sahara"></div><b>撒哈拉营地</b><span>1 晚</span></div>
+          <div class="t card"><div class="t-img" data-scene="lijiang"></div><b>漓江烟雨</b><span>1 晚</span></div>
+        </div>
+        <div style="height:120px"></div>
+      </section>
+
+    </div><!-- /screens -->
+
+    <!-- Mini 播放条 -->
+    <div class="mini show" id="mini" data-goto="page-player">
+      <div class="mimg" data-scene="qinghai"></div>
+      <div class="mt"><b>湖心月影</b><span>青海湖夜航 · 湖畔星野</span></div>
+      <div class="eq"><i></i><i></i><i></i></div>
+      <button class="fi-play" style="width:32px;height:32px" onclick="event.stopPropagation()"><svg class="ic" style="width:13px;height:13px"><use href="#i-pause"/></svg></button>
+    </div>
+
+    <!-- TabBar -->
+    <nav class="tabbar show" id="tabbar">
+      <button class="tab on" data-tab="page-home"><svg class="ic"><use href="#i-compass"/></svg>发现</button>
+      <button class="tab" data-tab="page-library"><svg class="ic"><use href="#i-map"/></svg>场景库</button>
+      <button class="tab mid" data-tab="page-studio"><i><svg class="ic"><use href="#i-sparkle"/></svg></i>工坊</button>
+      <button class="tab" data-tab="page-mine"><svg class="ic"><use href="#i-user"/></svg>我的</button>
+    </nav>
+
+    <!-- 遮罩 -->
+    <div class="sheet-mask" id="mask"></div>
+
+    <!-- 定时面板 -->
+    <div class="sheet" id="sheet-timer">
+      <div class="grab"></div>
+      <div class="sheet-head"><div><h4>定时入眠</h4><p>到点后音量渐弱至停止，守护整晚安睡</p></div><button class="sheet-x" data-close><svg class="ic"><use href="#i-close"/></svg></button></div>
+      <div class="timer-grid">
+        <button class="t-opt" data-t="15">15 分钟</button>
+        <button class="t-opt on" data-t="30">30 分钟<span>常用</span></button>
+        <button class="t-opt" data-t="45">45 分钟</button>
+        <button class="t-opt" data-t="60">60 分钟</button>
+        <button class="t-opt" data-t="chapter">播完本章</button>
+        <button class="t-opt" data-t="off">不限时</button>
+      </div>
+      <p class="sheet-tip">演示提示：点选任意时长后关闭面板，播放页右上角计时器将生效（原型演示）</p>
+    </div>
+
+    <!-- 音景调音台 -->
+    <div class="sheet" id="sheet-mix">
+      <div class="grab"></div>
+      <div class="sheet-head"><div><h4>音景调音台</h4><p>三轨独立混音，找到属于你的沉浸比例</p></div><button class="sheet-x" data-close><svg class="ic"><use href="#i-close"/></svg></button></div>
+      <div class="mix-row">
+        <div class="m-ic" style="background:rgba(139,156,255,.16);color:#B9C2FF"><svg class="ic"><use href="#i-mic"/></svg></div>
+        <div class="mix-info"><div class="mix-top">旁白引导<span class="mv" id="v1">40%</span></div><input type="range" id="s1" value="40" min="0" max="100"></div>
+      </div>
+      <div class="mix-row">
+        <div class="m-ic" style="background:rgba(123,232,176,.13);color:#9FE8C4"><svg class="ic"><use href="#i-drop"/></svg></div>
+        <div class="mix-info"><div class="mix-top">环境音<span class="mv" id="v2">35%</span></div><input type="range" id="s2" value="35" min="0" max="100"></div>
+      </div>
+      <div class="mix-row">
+        <div class="m-ic" style="background:rgba(240,206,142,.13);color:var(--gold)"><svg class="ic"><use href="#i-note"/></svg></div>
+        <div class="mix-info"><div class="mix-top">背景音乐<span class="mv" id="v3">25%</span></div><input type="range" id="s3" value="25" min="0" max="100"></div>
+      </div>
+      <p class="sheet-tip">提示：入睡前可将旁白调低、环境音调高，减少唤醒度（推荐组合已预置）</p>
+    </div>
+
+  </div><!-- /phone -->
+  </div><!-- /phoneBox -->
+
+  <!-- ============ 右侧：原型说明 ============ -->
+  <aside class="proto-side">
+    <div class="side-card">
+      <h4><svg class="ic"><use href="#i-doc"/></svg>当前页面交互说明</h4>
+      <p id="pageNote">主推位「今夜入梦」与六个场景分类入口；点击任意旅程卡片进入详情页；底部迷你播放条可回到播放页。</p>
+    </div>
+    <div class="side-card">
+      <h4><svg class="ic"><use href="#i-star"/></svg>神游的三个差异化设计</h4>
+      <ul>
+        <li><b>旅程站点叙事</b>：音频按「启程—途经—抵达」分章，替代传统单曲循环</li>
+        <li><b>音景调音台</b>：旁白 / 环境音 / 配乐三轨独立调节，AI 生成后可个性化混音</li>
+        <li><b>梦境工坊</b>：用户选目的地与氛围，AI 协同撰写剧本、合成语音、混录音景</li>
+      </ul>
+    </div>
+    <div class="side-card">
+      <h4><svg class="ic"><use href="#i-mixer"/></svg>设计规范</h4>
+      <p>深夜蓝黑基调，降低睡前视觉唤醒；主操作用星蓝紫渐变，旅程与伴眠元素用月光金。</p>
+      <div class="pal">
+        <span style="background:#0A0F22">背景</span>
+        <span style="background:linear-gradient(135deg,#8B9CFF,#C58BFF)">主色</span>
+        <span style="background:#F0CE8E;color:#3A2A10">月光金</span>
+        <span style="background:#7BE8B0;color:#0A2A1A">环境</span>
+      </div>
+    </div>
+    <div class="side-card">
+      <h4><svg class="ic"><use href="#i-flag"/></svg>关键假设（可推翻）</h4>
+      <ul>
+        <li>目标用户：18–40 岁入睡困扰 / 冥想人群，睡前 1 小时使用</li>
+        <li>MVP 先做「听」闭环：发现 → 播放 → 睡眠反馈；工坊为增长功能</li>
+        <li>夜间自动深色模式，默认 30 分钟定时关闭</li>
+      </ul>
+    </div>
+    <p class="side-note">原型内所有收听量、评分、睡眠数据均为虚构示例，仅用于演示交互与信息层级。本原型为产品设计参考，具体实施请结合公司合规与法务要求确认。</p>
+  </aside>
+</div>
+
+<script>
+/* ================= 场景插画引擎（参数化 SVG，全部自绘，无外部图片） ================= */
+function hash(s){let h=0;for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0}return Math.abs(h)%233280}
+function rng(seed){let s=seed||7;return()=>{s=(s*9301+49297)%233280;return s/233280}}
+
+const SCENES={
+  lijiang:{sky:['#111B2E','#1E3A44','#2E5450'],moon:{x:302,y:44,r:15},hills:[['#16242E',126,11],['#1E3438',140,8],['#28464A',156,6]],water:'#1C333C',fog:true},
+  hokkaido:{sky:['#0A1130','#141F4E','#23305E'],stars:46,moon:{x:96,y:42,r:14},snow:true,train:true},
+  kyoto:{sky:['#1B1226','#2C1B33','#452637'],stars:20,moon:{x:330,y:42,r:13},alley:true,rain:true},
+  sahara:{sky:['#0D0A26','#1D1550','#342468'],stars:64,galaxy:true,moon:{x:70,y:44,r:12},dunes:[['#241A31',118,13],['#332441',144,10]],tent:true,fire:true},
+  qinghai:{sky:['#171B40','#4A3562','#C97C5E'],stars:12,sun:{x:298,y:114,r:24},hills:[['#221D44',122,9],['#2C2654',140,7]],water:'#232B54',sunpath:true,birds:true},
+  iceland:{sky:['#050F18','#0A2331','#0E3440'],stars:56,aurora:true,snow:true,hut:true},
+  lake:{sky:['#0B1030','#1C1B52','#33306E'],stars:70,galaxy:true,moon:{x:200,y:52,r:11},hills:[['#181540',118,8],['#211E52',136,7]],water:'#1E2150',moonpath:true},
+};
+
+function sceneSVG(key,uid){
+  const S=SCENES[key]; if(!S) return '';
+  const r=rng(hash(key)), id=n=>n+'-'+key+'-'+uid;
+  let d='';
+  d+=`<defs>
+    <linearGradient id="${id('sky')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${S.sky[0]}"/><stop offset=".55" stop-color="${S.sky[1]}"/><stop offset="1" stop-color="${S.sky[2]}"/></linearGradient>
+    <radialGradient id="${id('glow')}"><stop offset="0" stop-color="#F0CE8E" stop-opacity=".55"/><stop offset="1" stop-color="#F0CE8E" stop-opacity="0"/></radialGradient>
+    <linearGradient id="${id('gal')}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#EDE6FF" stop-opacity=".30"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="${id('aur')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7BE8B0" stop-opacity=".75"/><stop offset="1" stop-color="#7BE8B0" stop-opacity="0"/></linearGradient>
+    <filter id="${id('blur')}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>`;
+  d+=`<rect width="400" height="200" fill="url(#${id('sky')})"/>`;
+  if(S.galaxy){d+=`<path d="M-20 66 Q 130 6 420 84 L 420 138 Q 130 58 -20 112 Z" fill="url(#${id('gal')})" transform="rotate(-6 200 80)"/>`}
+  if(S.stars){for(let i=0;i<S.stars;i++){d+=`<circle cx="${(r()*400).toFixed(1)}" cy="${(r()*115).toFixed(1)}" r="${r()<.86?0.9:1.7}" fill="#fff" opacity="${(.25+r()*.6).toFixed(2)}"/>`}}
+  if(S.aurora){
+    d+=`<path d="M-20 52 Q 60 8 140 44 T 280 30 T 420 48 V 110 Q 300 66 180 84 T -20 100 Z" fill="url(#${id('aur')})" filter="url(#${id('blur')})" opacity=".8"/>`;
+    d+=`<path d="M-20 30 Q 90 62 190 26 T 420 40 V 84 Q 280 56 160 74 T -20 78 Z" fill="url(#${id('aur')})" filter="url(#${id('blur')})" opacity=".45"/>`;
+  }
+  if(S.sun){d+=`<circle cx="${S.sun.x}" cy="${S.sun.y}" r="${S.sun.r}" fill="#FFAE78"/><circle cx="${S.sun.x}" cy="${S.sun.y}" r="${S.sun.r*2.1}" fill="url(#${id('glow')})" opacity=".5"/>`}
+  if(S.moon){const m=S.moon;d+=`<circle cx="${m.x}" cy="${m.y}" r="${(m.r*1.9).toFixed(1)}" fill="url(#${id('glow')})"/><circle cx="${m.x}" cy="${m.y}" r="${m.r}" fill="#F6EFD9"/><circle cx="${m.x-5}" cy="${m.y-3}" r="${m.r*.22}" fill="#E0D6B4" opacity=".8"/><circle cx="${m.x+4}" cy="${m.y+4}" r="${m.r*.14}" fill="#E0D6B4" opacity=".7"/>`}
+  if(S.hills){S.hills.forEach(([c,base,amp],i)=>{let p=`M0 ${base+amp}`;for(let x=0;x<=400;x+=50){p+=` Q ${x+25} ${base-amp+r()*amp*1.6} ${x+50} ${base-amp*.4+r()*amp}`;}p+=` L400 200 L0 200 Z`;d+=`<path d="${p}" fill="${c}"/>`})}
+  if(S.dunes){S.dunes.forEach(([c,base,amp],i)=>{let p=`M0 ${base}`;p+=` Q 100 ${base-amp} 210 ${base-amp*.2} T 400 ${base-amp*.7}`;p+=` L400 200 L0 200 Z`;d+=`<path d="${p}" fill="${c}"/>`})}
+  if(S.water){
+    d+=`<rect y="150" width="400" height="50" fill="${S.water}"/>`;
+    for(let i=0;i<7;i++){d+=`<line x1="${20+r()*300}" y1="${156+i*6}" x2="${60+r()*100+20}" y2="${156+i*6}" stroke="#fff" stroke-width="1" opacity=".12"/>`}
+  }
+  if(S.sunpath){d+=`<ellipse cx="298" cy="168" rx="30" ry="17" fill="#FFAE78" opacity=".30"/><line x1="258" y1="160" x2="338" y2="160" stroke="#FFC89B" stroke-width="1.4" opacity=".4"/><line x1="272" y1="172" x2="330" y2="172" stroke="#FFC89B" stroke-width="1.2" opacity=".3"/>`}
+  if(S.moonpath){d+=`<ellipse cx="200" cy="172" rx="24" ry="15" fill="#F0CE8E" opacity=".26"/><line x1="150" y1="161" x2="250" y2="161" stroke="#F5DFAE" stroke-width="1.4" opacity=".38"/><line x1="166" y1="174" x2="234" y2="174" stroke="#F5DFAE" stroke-width="1.2" opacity=".28"/><line x1="180" y1="186" x2="220" y2="186" stroke="#F5DFAE" stroke-width="1" opacity=".2"/>`}
+  if(S.snow){
+    d+=`<path d="M0 152 Q 100 138 210 150 T 400 144 V 200 H 0 Z" fill="#E7EEF9"/><path d="M0 170 Q 120 158 240 168 T 400 164 V 200 H 0 Z" fill="#D6E1F2"/>`;
+  }
+  if(S.train){
+    d+=`<rect x="0" y="163" width="400" height="3.5" fill="#0C1430" opacity=".65"/>`;
+    d+=`<rect x="176" y="128" width="200" height="32" rx="10" fill="#2C3A66"/><rect x="176" y="128" width="200" height="8" rx="4" fill="#3B4C7E" opacity=".85"/>`;
+    [192,218,244,270,296,322,348].forEach(x=>{d+=`<rect x="${x}" y="139" width="14" height="10" rx="2" fill="#FFD98A" opacity=".92"/>`});
+    d+=`<ellipse cx="276" cy="163" rx="130" ry="6" fill="#fff" opacity=".22"/>`;
+  }
+  if(S.hut){
+    d+=`<rect x="52" y="126" width="60" height="32" rx="4" fill="#1F3040"/><path d="M44 128 L82 104 L120 128 Z" fill="#E7EEF9"/><path d="M50 128 L82 106 L114 128 Z" fill="#2C4250" opacity=".55"/><rect x="64" y="137" width="13" height="11" rx="2" fill="#FFC978"/><circle cx="70" cy="142" r="13" fill="url(#${id('glow')})" opacity=".45"/>`;
+  }
+  if(S.tent){
+    d+=`<path d="M56 158 L84 116 L112 158 Z" fill="#C99A5B"/><path d="M84 116 L92 158 L76 158 Z" fill="#8A6238" opacity=".7"/><path d="M84 116 L112 158 L56 158" fill="none" stroke="#5E4526" stroke-width="1.4"/><line x1="84" y1="116" x2="84" y2="158" stroke="#5E4526" stroke-width="1.2"/>`;
+  }
+  if(S.fire){
+    d+=`<circle cx="140" cy="152" r="16" fill="url(#${id('glow')})" opacity=".9"/><path d="M136 154 Q 140 142 140 146 Q 143 138 145 154 Q 142 158 140 157 Q 138 158 136 154 Z" fill="#FFB65C"/><rect x="132" y="155" width="16" height="3" rx="1.5" fill="#5E4526"/>`;
+  }
+  if(S.alley){
+    d+=`<path d="M0 0 L152 0 L118 200 L0 200 Z" fill="#120B1C" opacity=".92"/><path d="M400 0 L248 0 L282 200 L400 200 Z" fill="#120B1C" opacity=".92"/>`;
+    d+=`<rect y="172" width="400" height="28" fill="#1E1428"/>`;
+    [[128,96],[140,128],[152,160]].forEach(([x,y])=>{d+=`<line x1="${x+18}" y1="${y-14}" x2="${x+18}" y2="${y-6}" stroke="#3A2A2E" stroke-width="1"/><circle cx="${x+18}" cy="${y}" r="9" fill="url(#${id('glow')})" opacity=".8"/><circle cx="${x+18}" cy="${y}" r="4.5" fill="#FF9E5C"/>`});
+    d+=`<circle cx="236" cy="112" r="9" fill="url(#${id('glow')})" opacity=".7"/><circle cx="236" cy="112" r="4" fill="#FFB26B"/>`;
+  }
+  if(S.birds){d+=`<path d="M112 78 q6 -7 12 0 M130 84 q6 -7 12 0 M124 62 q5 -6 10 0" stroke="#E8D9C4" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".55"/>`}
+  if(S.fog){d+=`<ellipse cx="140" cy="150" rx="150" ry="12" fill="#DDE8E4" opacity=".10"/><ellipse cx="300" cy="138" rx="130" ry="10" fill="#DDE8E4" opacity=".08"/>`}
+  if(S.rain){for(let i=0;i<20;i++){const x=r()*400,y=r()*170;d+=`<line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x-3.5).toFixed(1)}" y2="${(y+15).toFixed(1)}" stroke="#A9BCDE" stroke-width="1" opacity="${(.14+r()*.2).toFixed(2)}"/>`}}
+  return `<svg class="scene" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">${d}</svg>`;
+}
+
+let _uid=0;
+document.querySelectorAll('[data-scene]').forEach(el=>{
+  const host=el.querySelector(':scope > .thumb, :scope > .sc-img')||el;
+  host.insertAdjacentHTML('afterbegin',sceneSVG(el.dataset.scene,'u'+(_uid++)));
+});
+
+/* ================= 页面路由 ================= */
+const tabPages=['page-home','page-library','page-studio','page-mine'];
+const NOTES={
+  'page-home':'主推位「今夜入梦」与六个场景分类入口；点击任意旅程卡片进入详情页；底部迷你播放条可回到播放页。',
+  'page-library':'按「旅行方式」筛选（铁路/水路/徒步…）；双列场景卡片流；点击卡片进入旅程详情。',
+  'page-detail':'旅程站点时间轴呈现叙事结构；音景构成展示三轨混音比例；吸底按钮「开始旅程」进入播放页。',
+  'page-player':'呼吸圆环随节奏律动引导放松；旅程站点显示当前进度；「音景调音台」分别调节三轨音量；右上角唤起定时面板。',
+  'page-studio':'三步定制（目的地/氛围/声线）→ 点击「生成」演示 AI 创作流程：剧本 → 语音 → 混音；成品入「我的定制」。',
+  'page-mine':'睡眠数据概览与功能入口；「睡眠报告」进入周报页；会员与收听数据集中于顶部卡片。',
+  'page-report':'本周睡眠时长柱状图 + 入睡用时/夜醒/伴眠时长三项指标；底部为最常伴眠场景（示例数据）。'
+};
+const hist=['page-home'];
+let cur='page-home';
+function go(id,push=true){
+  if(id===cur) {closeSheets();return}
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const tgt=document.getElementById(id); tgt.classList.add('active'); tgt.scrollTop=0;
+  document.querySelectorAll('.tabbar .tab').forEach(t=>t.classList.toggle('on',t.dataset.tab===id));
+  const isTab=tabPages.includes(id);
+  document.getElementById('tabbar').classList.toggle('show',isTab);
+  document.getElementById('mini').classList.toggle('show',isTab);
+  document.getElementById('pageNote').textContent=NOTES[id]||'';
+  document.querySelectorAll('.ph-chip').forEach(c=>c.classList.toggle('on',c.dataset.nav===id&&!c.dataset.sheet));
+  if(push){ if(hist[hist.length-1]!==id) hist.push(id); }
+  cur=id; closeSheets();
+}
+function back(){ if(hist.length>1){hist.pop(); go(hist[hist.length-1],false)} else go('page-home',false) }
+
+document.addEventListener('click',e=>{
+  const nav=e.target.closest('[data-nav]');
+  if(nav){ const sh=nav.dataset.sheet; go(nav.dataset.nav); if(sh) setTimeout(()=>openSheet(sh),450); return }
+  const g=e.target.closest('[data-goto]'); if(g){ go(g.dataset.goto); return }
+  const b=e.target.closest('[data-back]'); if(b){ back(); return }
+  const sh=e.target.closest('[data-sheet]'); if(sh){ openSheet(sh.dataset.sheet); return }
+  const cl=e.target.closest('[data-close]'); if(cl){ closeSheets(); return }
+  if(e.target.id==='mask') closeSheets();
+});
+
+/* sheets */
+const mask=document.getElementById('mask');
+function openSheet(id){ mask.classList.add('show'); document.getElementById(id).classList.add('show') }
+function closeSheets(){ mask.classList.remove('show'); document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('show')) }
+
+/* 定时选项 */
+document.querySelectorAll('.t-opt').forEach(o=>o.addEventListener('click',()=>{
+  document.querySelectorAll('.t-opt').forEach(x=>x.classList.remove('on')); o.classList.add('on');
+  setTimeout(closeSheets,320);
+}));
+
+/* 调音台滑块 */
+[['s1','v1'],['s2','v2'],['s3','v3']].forEach(([s,v])=>{
+  document.getElementById(s).addEventListener('input',e=>{document.getElementById(v).textContent=e.target.value+'%'});
+});
+
+/* 筛选 chips */
+document.querySelectorAll('.chips .chip').forEach(c=>c.addEventListener('click',()=>{
+  c.parentElement.querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); c.classList.add('on');
+}));
+
+/* 工坊选项 */
+function bindOpts(id,multi){
+  document.querySelectorAll('#'+id+' .opt').forEach(o=>o.addEventListener('click',()=>{
+    if(!multi){ document.querySelectorAll('#'+id+' .opt').forEach(x=>x.classList.remove('on')); }
+    o.classList.toggle('on');
+  }));
+}
+bindOpts('optDest',false); bindOpts('optVibe',true); bindOpts('optVoice',false);
+
+/* 生成模拟 */
+const btnGen=document.getElementById('btnGen');
+btnGen.addEventListener('click',()=>{
+  document.getElementById('genResult').classList.remove('show');
+  const box=document.getElementById('genBox'); box.classList.add('show');
+  const steps=[...box.querySelectorAll('.gs')];
+  steps.forEach(s=>s.classList.remove('run','done'));
+  let i=0;
+  function next(){
+    if(i>0) steps[i-1].classList.replace('run','done');
+    if(i<steps.length){ steps[i].classList.add('run'); i++; setTimeout(next,1300); }
+    else{ document.getElementById('genResult').classList.add('show'); }
+  }
+  next();
+});
+
+/* 播放/暂停切换 */
+const pt=document.getElementById('playToggle');
+pt.addEventListener('click',()=>{
+  const u=pt.querySelector('use');
+  const paused=u.getAttribute('href')==='#i-play';
+  u.setAttribute('href',paused?'#i-pause':'#i-play');
+});
+
+/* 睡眠柱状图 */
+(function(){
+  const data=[7.2,6.8,7.6,5.9,7.8,8.2,7.1], W=298,H=118,bw=26,gap=(W-7*bw)/6,max=9;
+  let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">`;
+  s+=`<defs><linearGradient id="barg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C58BFF"/><stop offset="1" stop-color="#8B9CFF" stop-opacity=".45"/></linearGradient></defs>`;
+  const avg=7.2, ay=H-(avg/max)*H;
+  s+=`<line x1="0" y1="${ay}" x2="${W}" y2="${ay}" stroke="#F0CE8E" stroke-width="1" stroke-dasharray="4 4" opacity=".55"/>`;
+  data.forEach((v,i)=>{
+    const x=i*(bw+gap), h=(v/max)*H, y=H-h, last=i===6;
+    s+=`<rect x="${x}" y="${y}" width="${bw}" height="${h}" rx="7" fill="${last?'url(#barg)':'rgba(139,156,255,.32)'}"/>`;
+    s+=`<text x="${x+bw/2}" y="${y-6}" font-size="9" fill="${last?'#F0CE8E':'#68739B'}" text-anchor="middle">${v}</text>`;
+  });
+  s+=`<text x="${W}" y="${ay-5}" font-size="8.5" fill="#F0CE8E" text-anchor="end" opacity=".8">均值 7.2h</text></svg>`;
+  document.getElementById('chartBox').innerHTML=s;
+})();
+
+/* 手机自适应缩放 */
+function fit(){
+  const phone=document.getElementById('phone'), box=document.getElementById('phoneBox');
+  const head=document.querySelector('.proto-header').offsetHeight;
+  const availH=innerHeight-head-70, availW=Math.min(innerWidth-48,920);
+  const sc=Math.min(1,availH/880,(availW-330)/412||availW/412);
+  phone.style.transform=`scale(${sc})`;
+  box.style.width=412*sc+'px'; box.style.height=880*sc+'px';
+}
+fit(); addEventListener('resize',fit);
+
+/* 支持 URL 锚点直达页面，如 #page-player */
+if(location.hash){const id=decodeURIComponent(location.hash.slice(1));if(document.getElementById(id)){go(id,false);history.replaceState(null,'',' ');scrollTo(0,0)}}
+</script>
+</body>
+</html>

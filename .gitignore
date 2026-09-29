@@ -1,0 +1,33 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+build/
+*.tsbuildinfo
+
+# 环境变量（仅提交 .env.example 占位）
+.env
+.env.*
+!.env.example
+
+# Expo / RN 构建与签名
+.expo/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# 日志
+*.log
+pnpm-debug.log*
+
+# 缓存与临时
+.cache/
+coverage/
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/

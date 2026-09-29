@@ -1,0 +1,11 @@
+packages:
+  - "apps/*"
+  - "server"
+  - "packages/*"
+
+# pnpm 10 默认拦截依赖的构建脚本，这里显式放行原生编译/引擎下载
+onlyBuiltDependencies:
+  - "@prisma/client"
+  - "@prisma/engines"
+  - argon2
+  - prisma
