@@ -12,6 +12,7 @@ import { ContentModule } from "./content/content.module";
 import { HealthModule } from "./health/health.module";
 import { PipelineModule } from "./pipeline/pipeline.module";
 import { PrismaModule } from "./prisma/prisma.module";
+import { StatsModule } from "./stats/stats.module";
 import { UsersModule } from "./users/users.module";
 
 @Module({
@@ -52,6 +53,7 @@ import { UsersModule } from "./users/users.module";
     BillingModule,
     ContentModule,
     PipelineModule,
+    StatsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

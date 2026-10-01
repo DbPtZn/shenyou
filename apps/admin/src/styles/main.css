@@ -1,0 +1,53 @@
+/* 全局样式：与 App 的深色基调协调（CLAUDE.md §8） */
+:root {
+  /* Element Plus 暗色变量覆盖，向 #0A0F22 系靠拢 */
+  --el-bg-color: #0d1330;
+  --el-bg-color-page: #0a0f22;
+  --el-bg-color-overlay: #141b3d;
+  --el-fill-color-blank: #0d1330;
+  --el-border-color: #2a3565;
+  --el-border-color-light: #232c52;
+  --el-border-color-lighter: #1e2545;
+  --el-text-color-primary: #eef2ff;
+  --el-text-color-regular: #c3cbe8;
+  --el-text-color-secondary: #8a94c0;
+  --el-color-primary: #8b9cff;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--el-bg-color-page);
+  color: var(--el-text-color-primary);
+  font-family:
+    "PingFang SC",
+    "Microsoft YaHei",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+}
+
+/* 状态标签四色（统一定义，供全局使用） */
+.status-tag--draft {
+  --el-tag-bg-color: rgba(138, 148, 192, 0.15);
+  --el-tag-border-color: rgba(138, 148, 192, 0.4);
+  --el-tag-text-color: #8a94c0;
+}
+.status-tag--reviewing {
+  --el-tag-bg-color: rgba(230, 180, 80, 0.12);
+  --el-tag-border-color: rgba(230, 180, 80, 0.4);
+  --el-tag-text-color: #e6b450;
+}
+.status-tag--published {
+  --el-tag-bg-color: rgba(103, 194, 130, 0.12);
+  --el-tag-border-color: rgba(103, 194, 130, 0.4);
+  --el-tag-text-color: #67c282;
+}
+.status-tag--offline {
+  --el-tag-bg-color: rgba(220, 100, 100, 0.12);
+  --el-tag-border-color: rgba(220, 100, 100, 0.4);
+  --el-tag-text-color: #dc6464;
+}

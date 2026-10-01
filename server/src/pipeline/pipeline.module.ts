@@ -7,9 +7,14 @@ import { PipelineController } from "./pipeline.controller";
 import { PipelineQueue } from "./pipeline.queue";
 import { PipelineService } from "./pipeline.service";
 import { PipelineWorker } from "./pipeline.worker";
+import { AliyunTtsProvider } from "./providers/aliyun-tts.provider";
+import { MinimaxMusicProvider } from "./providers/minimax-music.provider";
 import { MockMusicProvider } from "./providers/mock-music.provider";
 import { MockTtsProvider } from "./providers/mock-tts.provider";
 import { ProviderFactory } from "./providers/provider.factory";
+import { StableAudioMusicProvider } from "./providers/stable-audio-music.provider";
+import { TencentMusicProvider } from "./providers/tencent-music.provider";
+import { TencentTtsProvider } from "./providers/tencent-tts.provider";
 
 /**
  * AI 内容管线模块：草稿生成 → TTS → 音乐 → 混音 → 上传。
@@ -27,7 +32,12 @@ import { ProviderFactory } from "./providers/provider.factory";
     MixService,
     ProviderFactory,
     MockTtsProvider,
+    AliyunTtsProvider,
+    TencentTtsProvider,
     MockMusicProvider,
+    MinimaxMusicProvider,
+    StableAudioMusicProvider,
+    TencentMusicProvider,
     StorageService,
   ],
   exports: [PipelineService, PipelineQueue],

@@ -10,6 +10,7 @@ import { ChaptersController } from "./chapters.controller";
 import { ChaptersService } from "./chapters.service";
 import { FavoritesController } from "./favorites.controller";
 import { FavoritesService } from "./favorites.service";
+import { ImageStreamController } from "./image-stream.controller";
 import { JourneysController } from "./journeys.controller";
 import { JourneysService } from "./journeys.service";
 import { PlaybackController } from "./playback.controller";
@@ -27,6 +28,7 @@ import { StorageService } from "./storage.service";
     FavoritesController,
     AdminController,
     AudioStreamController,
+    ImageStreamController,
   ],
   providers: [
     JourneysService,

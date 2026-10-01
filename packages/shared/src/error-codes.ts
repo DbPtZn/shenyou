@@ -15,6 +15,8 @@ export const ErrorCode = {
   Conflict: 1005,
   RateLimited: 1006,
   Unavailable: 1007,
+  /** 管理端：禁止管理员修改自己的角色（防误降级） */
+  SelfRoleChangeForbidden: 1008,
 
   // 认证 2xxx
   AccessTokenExpired: 2001,

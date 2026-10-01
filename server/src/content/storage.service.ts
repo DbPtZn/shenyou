@@ -1,4 +1,9 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectsCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Inject, Injectable } from "@nestjs/common";
 import { createReadStream, statSync } from "node:fs";
@@ -60,6 +65,18 @@ export class StorageService {
   /** 直接向 S3 发送命令（供音频流式回源使用） */
   send(command: GetObjectCommand) {
     return this.client.send(command);
+  }
+
+  /** 批量删除对象（旅程删除后的音频清理）；S3 DeleteObjects 单批上限 1000，超出自动分批 */
+  async deleteObjects(objectKeys: string[]): Promise<void> {
+    for (let i = 0; i < objectKeys.length; i += 1000) {
+      await this.client.send(
+        new DeleteObjectsCommand({
+          Bucket: this.env.S3_BUCKET,
+          Delete: { Objects: objectKeys.slice(i, i + 1000).map((Key) => ({ Key })) },
+        }),
+      );
+    }
   }
 
   /**

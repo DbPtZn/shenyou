@@ -71,6 +71,9 @@ export class AudioStreamController {
       );
 
       res.setHeader("Accept-Ranges", "bytes");
+      // helmet 默认 CORP: same-origin 会拦截 Web 管理端 <audio> 的跨源加载（5174 → 3000）。
+      // 音频流本质是 CDN 回源资源（签名 URL 已做访问控制），必须允许跨源嵌入播放。
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
       res.setHeader(
         "Content-Type",
         output.ContentType && output.ContentType !== "application/octet-stream"

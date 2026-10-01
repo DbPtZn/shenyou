@@ -37,3 +37,29 @@ export const chapterStopSchema = z.object({
   subtitle: z.string().optional(),
 });
 export type ChapterStop = z.infer<typeof chapterStopSchema>;
+
+/** 用户角色：user 普通用户 / admin 运营管理员（Prisma User.role 为 string，取值由此约束） */
+export const userRoleSchema = z.enum(["user", "admin"]);
+export type UserRole = z.infer<typeof userRoleSchema>;
+export const USER_ROLES = userRoleSchema.options;
+
+/** 章节文案审核状态（与 Prisma DraftStatus 枚举一致）：pending 待确认 → confirmed 可合成 → rejected 需重写 */
+export const draftStatusSchema = z.enum(["pending", "confirmed", "rejected"]);
+export type DraftStatus = z.infer<typeof draftStatusSchema>;
+export const DRAFT_STATUSES = draftStatusSchema.options;
+
+/** AI 管线步骤（与 Prisma PipelineStep 枚举一致） */
+export const pipelineStepSchema = z.enum(["draft", "tts", "music", "mix", "upload"]);
+export type PipelineStep = z.infer<typeof pipelineStepSchema>;
+export const PIPELINE_STEPS = pipelineStepSchema.options;
+
+/** 管线任务状态（与 Prisma PipelineJobStatus 枚举一致） */
+export const pipelineJobStatusSchema = z.enum([
+  "pending",
+  "running",
+  "completed",
+  "failed",
+  "dead",
+]);
+export type PipelineJobStatus = z.infer<typeof pipelineJobStatusSchema>;
+export const PIPELINE_JOB_STATUSES = pipelineJobStatusSchema.options;

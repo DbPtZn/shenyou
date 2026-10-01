@@ -71,6 +71,9 @@ model User {
   playbackHistories  PlaybackHistory[]
   favorites          Favorite[]
   entitlement        Entitlement?
+
+  /// 数据看板按订阅状态聚合（@@groupBy）使用
+  @@index([subscriptionStatus])
 }
 
 /// Refresh Token：只存 SHA-256 哈希；一次一换（revokedAt + replacedById）；可吊销
@@ -195,6 +198,10 @@ model PlaybackHistory {
 
   @@id([userId, chapterId])
   @@index([userId, updatedAt])
+  /// 数据看板：按章节/旅程聚合播放排行
+  @@index([chapterId])
+  /// 数据看板：近 7/30 天活跃按时间范围计数
+  @@index([updatedAt])
 }
 
 /// 收藏：用户对旅程的收藏关系
@@ -255,4 +262,28 @@ model BillingEventLog {
 
   @@index([environment, createdAt])
   @@index([eventType, createdAt])
+}
+
+/// 管理端操作审计日志：用户角色/订阅状态等敏感变更落库可查
+model AdminAuditLog {
+  id           String   @id @default(uuid())
+  /// 操作管理员 ID（故意不加外键：账号删除后审计仍须留存）
+  adminUserId  String
+  /// 操作管理员账号快照（phone/email/nickname 取一，写入时冻结）
+  adminAccount String
+  /// 目标用户 ID（同样不加外键）
+  targetUserId String
+  /// 目标用户账号快照
+  targetAccount String
+  /// 变更字段：role / subscriptionStatus
+  field        String
+  /// 变更前值
+  before       String
+  /// 变更后值
+  after        String
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([adminUserId, createdAt])
+  @@index([targetUserId, createdAt])
 }
